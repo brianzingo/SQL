@@ -1,0 +1,76 @@
+--2023 fall beginner cohort Student not from Indiana
+SELECT * FROM DSS_RDS.IR_CEN_TRM_SNPSHT_ST
+	WHERE INST_CD = 'IUSBA' 
+	AND ACAD_DRVD_COHORT_CD = 'F23UGB' 
+	AND ACAD_TERM_CD  = '4238'
+	AND (STU_HS_ST_CD NOT LIKE '46%' OR STU_HS_ST_CD NOT LIKE '47%');
+
+--2023 fall beginner cohort Student from Indiana
+SELECT DISTINCT * FROM DSS_RDS.IR_CEN_TRM_SNPSHT_ST
+	WHERE INST_CD = 'IUSBA' 
+	AND ACAD_DRVD_COHORT_CD = 'F23UGB' 
+	AND ACAD_TERM_CD  = '4238' 
+	AND (STU_HS_ST_CD LIKE '46%' OR STU_HS_ST_CD LIKE '47%');
+
+
+--% Indiana Students
+
+WITH CTE AS (
+    -- 2023 fall beginner cohort Student from Indiana
+    SELECT 
+        (SELECT DISTINCT COUNT(INST_CD) 
+         FROM DSS_RDS.IR_CEN_TRM_SNPSHT_ST
+         WHERE INST_CD = 'IUSBA' 
+         AND ACAD_DRVD_COHORT_CD = 'F23UGB' 
+         AND ACAD_TERM_CD = '4238' 
+         AND (STU_HS_ST_CD LIKE '46%' OR STU_HS_ST_CD LIKE '47%')) AS IndianaCount,
+        
+    -- 2023 fall beginner cohort Student including Indiana
+    (SELECT DISTINCT COUNT(INST_CD) 
+     FROM DSS_RDS.IR_CEN_TRM_SNPSHT_ST
+     WHERE INST_CD = 'IUSBA' 
+     AND ACAD_DRVD_COHORT_CD = 'F23UGB' 
+     AND ACAD_TERM_CD = '4238') AS TotalCount
+)
+
+SELECT CAST( (IndianaCount * 100.0) / TotalCount AS DECIMAL(10,2)) AS PercentIndiana 
+FROM cte;
+
+
+--Create 2 function namely: IndianaStudents and NOTIndianaStudents
+
+--Function IndianaStudents
+CREATE OR ALTER FUNCTION [DSS_RDS].[IndianaStudents]()
+RETURNS INT
+AS
+BEGIN
+
+    RETURN (SELECT DISTINCT COUNT(INST_CD) 
+         FROM DSS_RDS.IR_CEN_TRM_SNPSHT_ST
+         WHERE INST_CD = 'IUSBA' 
+         AND ACAD_DRVD_COHORT_CD = 'F23UGB' 
+         AND ACAD_TERM_CD = '4238' 
+         AND (STU_HS_ST_CD LIKE '46%' OR STU_HS_ST_CD LIKE '47%'))
+
+END
+
+
+--Function NOTIndianaStudents
+CREATE OR ALTER FUNCTION [DSS_RDS].[IndianaStudents]()
+RETURNS INT
+AS
+BEGIN
+
+    RETURN (SELECT DISTINCT COUNT(INST_CD) 
+         FROM DSS_RDS.IR_CEN_TRM_SNPSHT_ST
+         WHERE INST_CD = 'IUSBA' 
+         AND ACAD_DRVD_COHORT_CD = 'F23UGB' 
+         AND ACAD_TERM_CD = '4238' 
+         AND (STU_HS_ST_CD NOT LIKE '46%' OR STU_HS_ST_CD NOT LIKE '47%'))
+
+END
+
+--Call the 2 functions side by side
+SELECT [DSS_RDS].[NOTIndianaStudents] () AS NOTIndianaStudents ,[DSS_RDS].[IndianaStudents]() AS IndianaStudents
+GO
+
